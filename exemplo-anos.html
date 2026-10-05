@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pontos em movimento: unidades por ano e três futuros</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Space+Grotesk:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="pontos.css">
+<style>
+  html, body { margin: 0; height: 100%; background: var(--pm-fundo); color: var(--pm-texto); }
+  body { overflow: hidden; font-family: var(--pm-fonte); }
+  .app {
+    box-sizing: border-box;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    gap: 12px;
+    height: 100dvh;
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 16px clamp(12px, 2.4vw, 32px) 12px;
+  }
+  header { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-width: 0; }
+  header h1 { margin: 0; font: 600 clamp(15px, 1.6vw, 19px)/1.2 var(--pm-fonte-titulo); text-wrap: balance; min-width: 0; }
+  header h1 small { display: block; font: 400 12px/1.4 var(--pm-fonte); color: var(--pm-texto2); }
+  .marca { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--pm-acento2); margin-right: 8px; box-shadow: 0 0 0 4px rgba(181, 132, 255, .15); vertical-align: middle; }
+  footer { font-size: 11px; line-height: 1.5; color: var(--pm-texto2); min-width: 0; overflow-wrap: anywhere; }
+  #palco { min-height: 0; min-width: 0; }
+  @media (max-width: 520px) { .app { padding-top: 10px; gap: 8px; } footer { font-size: 10px; } }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1><span class="marca"></span>Pontos em movimento <small>1 ponto = 1 unidade vendida (fictícia)</small></h1>
+    <button class="pm-btn" id="tema" type="button" aria-label="Trocar tema claro ou escuro" title="Trocar tema">Tema</button>
+  </header>
+  <div id="palco"></div>
+  <footer>
+    <div>Fonte: vendas fictícias geradas no próprio navegador (semente fixa), sem nenhum dado real</div>
+    <div>Janela: janeiro de 2023 a dezembro de 2026, com outubro a dezembro de 2026 estimados, e 2027 projetado</div>
+  </footer>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js" integrity="sha384-CjloA8y00+1SDAUkjs099PVfnY2KmDC2BZnws9kh8D/lX1s46w6EPhpXdqMfjK6i" crossorigin="anonymous"></script>
+<script src="pontos.js"></script>
+<script>
+// ---------- dado fictício: unidades vendidas por mês ----------
+function rng(s) { return function () { s = (s + 0x6D2B79F5) >>> 0; let t = s; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+const r = rng(42);
+const normal = () => { let u = 0, v = 0; while (!u) u = r(); while (!v) v = r(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
+const MESES = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
+const ANOS = ["2023", "2024", "2025", "2026"];
+const ultimoReal = { ano: "2026", mes: 9 }; // de outubro de 2026 em diante é estimativa
+const fmt = (n) => n.toLocaleString("pt-BR");
+
+const itens = [];
+const totalAno = {};
+ANOS.forEach((ano, ia) => {
+  totalAno[ano] = 0;
+  for (let mes = 1; mes <= 12; mes++) {
+    const m = ia * 12 + mes - 1;
+    const media = 15 * Math.pow(1.24, m / 12) * (1 + 0.18 * Math.sin((2 * Math.PI * (m - 2)) / 12));
+    const n = Math.max(4, Math.round(media + normal() * 2.2));
+    const estimado = ano === ultimoReal.ano && mes > ultimoReal.mes;
+    for (let k = 1; k <= n; k++) {
+      itens.push({ id: `u-${ano}-${String(mes).padStart(2, "0")}-${k}`, valor: 1, ano, mes, estimado, tipo: estimado ? "Estimado" : "Realizado" });
+    }
+    totalAno[ano] += n;
+  }
+});
+const base26 = totalAno["2026"];
+const futuro = { P: Math.round(base26 * 0.9), C: Math.round(base26 * 1.14), O: Math.round(base26 * 1.34) };
+const NOME = { P: "Pessimista", C: "Conservador", O: "Otimista" };
+// conjunto principal de 2027: os primeiros formam o pessimista, depois o que o conservador soma, depois o otimista
+for (let j = 0; j < futuro.O; j++) {
+  const nivel = j < futuro.P ? 1 : j < futuro.C ? 2 : 3;
+  itens.push({ id: `f27-${j}`, valor: 1, ano: "2027", nivel, cenario: "O" });
+}
+// cópias para a cena com os três futuros lado a lado
+["P", "C"].forEach((cen) => {
+  for (let j = 0; j < futuro[cen]; j++) itens.push({ id: `f27${cen}-${j}`, valor: 1, ano: "2027", nivel: 1, copia: cen, cenario: cen });
+});
+const realizados = itens.filter((d) => d.ano !== "2027");
+
+// ---------- cor: a mesma entidade tem a mesma cor em todas as cenas ----------
+const coresLeg = { Realizado: "var(--pm-c1)", Estimado: "var(--pm-c1)", Pessimista: "var(--pm-c2)", Conservador: "var(--pm-c3)", Otimista: "var(--pm-c4)" };
+const ordemLeg = ["Realizado", "Estimado", "Pessimista", "Conservador", "Otimista"];
+const corCenario = (cen) => ({ campo: (d) => (d.ano !== "2027" ? d.tipo : NOME[cen || d.cenario]), cores: coresLeg, ordem: ordemLeg });
+const historico = (d) => d.ano !== "2027";
+const ordenar = (a, b) => (a.mes || 0) - (b.mes || 0) || (a.nivel || 0) - (b.nivel || 0) || String(a.id).localeCompare(String(b.id), "pt-BR", { numeric: true });
+const barras = { tipo: "barras", por: "ano", orientacao: "auto", ordem: [...ANOS, "2027"], ordenarDentro: ordenar, tamanho: "unidade" };
+const estimados = realizados.filter((d) => d.estimado).length;
+
+const cenas = [
+  { tipo: "amontoado", filtro: historico, cor: corCenario(),
+    titulo: "Cada ponto é uma unidade vendida",
+    texto: `São ${fmt(realizados.length)} unidades fictícias de 2023 a 2026. As ${fmt(estimados)} vazadas ainda são estimativa: outubro a dezembro de 2026.` },
+  Object.assign({}, barras, { filtro: historico, cor: corCenario(),
+    titulo: "Ano a ano, a pilha cresce",
+    texto: "Cada coluna junta as unidades do ano, empilhadas de janeiro (embaixo) a dezembro (em cima). Em 2026, o topo vazado é o que ainda falta acontecer." }),
+  Object.assign({}, barras, { filtro: (d) => historico(d) || (!d.copia && d.nivel <= 2), cor: corCenario("C"),
+    titulo: "2027 no cenário conservador",
+    texto: `Mantido o ritmo recente, 2027 fecharia perto de ${fmt(futuro.C)} unidades, ${fmt(futuro.C - base26)} a mais que 2026.` }),
+  Object.assign({}, barras, { filtro: (d) => historico(d) || (!d.copia && d.nivel <= 1), cor: corCenario("P"),
+    titulo: "E se o ano for difícil?",
+    texto: `No cenário pessimista, ${fmt(futuro.C - futuro.P)} pontos somem da coluna de 2027, que fica abaixo de 2026.` }),
+  Object.assign({}, barras, { filtro: (d) => historico(d) || !d.copia, cor: corCenario("O"),
+    titulo: "E se tudo der certo?",
+    texto: `No cenário otimista, nascem ${fmt(futuro.O - futuro.P)} unidades sobre o pessimista e 2027 chega a ${fmt(futuro.O)}.` }),
+  Object.assign({}, barras, {
+    por: (d) => (d.ano !== "2027" ? d.ano : "2027 " + d.cenario),
+    ordem: [...ANOS, "2027 P", "2027 C", "2027 O"],
+    rotuloGrupo: (k) => (k.startsWith("2027 ") ? "2027\n" + NOME[k.slice(5)].toLowerCase() : k),
+    cor: corCenario(), duracao: 1700,
+    titulo: "Os três futuros lado a lado",
+    texto: "A coluna de 2027 se abre em três. A distância entre o pessimista e o otimista é o tamanho da incerteza." }),
+];
+
+const pm = Pontos.criar("#palco", {
+  itens, cenas,
+  vazado: "estimado",
+  dica: (d) => d.ano === "2027"
+    ? `<b>Projeção 2027</b><br><span>cenário</span> ${NOME[d.cenario].toLowerCase()}<br><span>1 ponto = 1 unidade</span>`
+    : `<b>Unidade de ${MESES[d.mes - 1]}/${d.ano}</b><br><span>${d.estimado ? "estimada, mês ainda não fechado" : "realizada"}</span>`,
+  renderizador: new URLSearchParams(location.search).get("render") || "auto",
+});
+window.pm = pm;
+
+document.getElementById("tema").addEventListener("click", () => {
+  const h = document.documentElement;
+  h.dataset.tema = h.dataset.tema === "claro" ? "" : "claro";
+  pm.tema();
+});
+</script>
+</body>
+</html>

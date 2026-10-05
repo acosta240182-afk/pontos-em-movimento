@@ -1,0 +1,254 @@
+/* pontos.css v0.1.0 | MIT
+   Tema padrão: HUD escuro (fundo quase preto, ciano e roxo, JetBrains Mono).
+   Para trocar o tema, sobrescreva as variáveis --pm-* em qualquer seletor acima do .pm.
+   As cores de categoria (--pm-c1 a --pm-c5) passaram no validador de paleta da skill dataviz
+   (faixa de luminosidade, separação para daltonismo e contraste) sobre o fundo #040914. */
+
+:root {
+  --pm-fundo: #040914;
+  --pm-painel: rgba(10, 22, 44, .72);
+  --pm-texto: #EAF6FF;
+  --pm-texto2: #93A9C6;
+  --pm-linha: rgba(103, 232, 249, .22);
+  --pm-grade: rgba(103, 232, 249, .07);
+  --pm-acento: #22D3EE;
+  --pm-acento2: #B584FF;
+  --pm-c1: #139FC0;
+  --pm-c2: #D55181;
+  --pm-c3: #C98500;
+  --pm-c4: #9085E9;
+  --pm-c5: #199E70;
+  --pm-fonte: 'JetBrains Mono', ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  --pm-fonte-titulo: 'Space Grotesk', 'Segoe UI', system-ui, sans-serif;
+  --pm-raio: 10px;
+}
+
+[data-tema="claro"] {
+  --pm-fundo: #F6F7FB;
+  --pm-painel: rgba(255, 255, 255, .85);
+  --pm-texto: #0E1726;
+  --pm-texto2: #4A5873;
+  --pm-linha: rgba(30, 64, 120, .22);
+  --pm-grade: rgba(30, 64, 120, .06);
+  --pm-acento: #0B7FA0;
+  --pm-acento2: #6D3FD6;
+  --pm-c1: #1B87A8;
+  --pm-c2: #C2416F;
+  --pm-c3: #A86F00;
+  --pm-c4: #6E5FD8;
+  --pm-c5: #13845C;
+}
+
+.pm {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto auto;
+  gap: 10px;
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+  color: var(--pm-texto);
+  font-family: var(--pm-fonte);
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* legenda da cena: altura mínima medida pelo JS, para o palco não pular de tamanho */
+.pm-cabeca { min-width: 0; }
+.pm-passo {
+  font-size: 11px;
+  color: var(--pm-acento);
+  letter-spacing: .04em;
+  font-variant-numeric: tabular-nums;
+}
+.pm-titulo {
+  margin: 4px 0 4px;
+  font-family: var(--pm-fonte-titulo);
+  font-weight: 600;
+  font-size: clamp(17px, 2.2vw, 26px);
+  line-height: 1.2;
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+}
+.pm-texto {
+  margin: 0;
+  max-width: 72ch;
+  font-size: clamp(12px, 1.05vw, 14px);
+  line-height: 1.5;
+  color: var(--pm-texto2);
+  text-wrap: pretty;
+  overflow-wrap: anywhere;
+}
+
+/* palco: moldura HUD com cantoneiras */
+.pm-palco {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid var(--pm-linha);
+  border-radius: var(--pm-raio);
+  background:
+    linear-gradient(var(--pm-grade) 1px, transparent 1px) 0 0 / 28px 28px,
+    linear-gradient(90deg, var(--pm-grade) 1px, transparent 1px) 0 0 / 28px 28px,
+    radial-gradient(120% 90% at 50% 40%, rgba(34, 211, 238, .05), transparent 70%);
+  touch-action: pan-y;
+  cursor: crosshair;
+}
+.pm-palco::before, .pm-palco::after {
+  content: "";
+  position: absolute;
+  width: 14px; height: 14px;
+  pointer-events: none;
+  border-color: var(--pm-acento);
+  border-style: solid;
+  opacity: .8;
+}
+.pm-palco::before { top: 6px; left: 6px; border-width: 1.5px 0 0 1.5px; }
+.pm-palco::after { right: 6px; bottom: 6px; border-width: 0 1.5px 1.5px 0; }
+.pm-palco > canvas, .pm-palco > svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* guias: eixos, rótulos de grupo e contagens */
+.pm-guias text {
+  fill: var(--pm-texto2);
+  font-family: var(--pm-fonte);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  paint-order: stroke;
+  stroke: var(--pm-fundo);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+}
+.pm-guias .pm-rotulo { fill: var(--pm-texto); font-size: 12px; }
+.pm-guias .pm-num { fill: var(--pm-acento); font-size: 12px; font-weight: 600; }
+.pm-guias .domain, .pm-guias .tick line { stroke: var(--pm-linha); }
+.pm-guias .pm-eixo-titulo { fill: var(--pm-texto2); font-size: 11px; }
+.pm-guias .pm-base { stroke: var(--pm-linha); }
+.pm-guias .pm-foco { fill: none; stroke: var(--pm-texto); stroke-width: 1.5px; }
+
+/* dica (tooltip) */
+.pm-dica {
+  position: absolute;
+  z-index: 3;
+  max-width: min(260px, 80%);
+  padding: 8px 10px;
+  border: 1px solid var(--pm-linha);
+  border-radius: 8px;
+  background: var(--pm-painel);
+  backdrop-filter: blur(6px);
+  font-size: 12px;
+  line-height: 1.45;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity .12s, transform .12s;
+  overflow-wrap: anywhere;
+}
+.pm-dica.on { opacity: 1; transform: none; }
+.pm-dica b { color: var(--pm-texto); font-weight: 600; }
+.pm-dica span { color: var(--pm-texto2); }
+
+/* legenda: clicar destaca a categoria */
+.pm-legenda {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+  min-width: 0;
+  align-content: flex-start;
+}
+.pm-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 4px 9px;
+  border: 1px solid var(--pm-linha);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--pm-texto);
+  font: 12px/1.3 var(--pm-fonte);
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition: opacity .15s, border-color .15s;
+}
+.pm-chip i {
+  width: 9px; height: 9px;
+  flex: none;
+  border-radius: 50%;
+}
+.pm-chip i.vazado { background: transparent !important; border: 1.5px solid currentColor; }
+.pm-chip em { font-style: normal; color: var(--pm-texto2); }
+.pm-chip[aria-pressed="true"] { border-color: var(--pm-acento); }
+.pm-legenda.filtrando .pm-chip[aria-pressed="false"] { opacity: .45; }
+.pm-chip.fixo { cursor: default; }
+
+/* controles */
+.pm-controles {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.pm-btn {
+  display: inline-grid;
+  place-items: center;
+  height: 36px;
+  min-width: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--pm-linha);
+  border-radius: 8px;
+  background: var(--pm-painel);
+  color: var(--pm-texto);
+  font: 13px var(--pm-fonte);
+  cursor: pointer;
+  transition: border-color .15s, background .15s;
+}
+.pm-btn:hover, .pm-btn:focus-visible { border-color: var(--pm-acento); outline: none; }
+.pm-btn svg { width: 16px; height: 16px; }
+.pm-btn[aria-pressed="true"] { border-color: var(--pm-acento2); color: var(--pm-acento2); }
+.pm-bolinhas {
+  display: flex;
+  flex: 1;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.pm-bolinha {
+  width: 8px; height: 8px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: var(--pm-linha);
+  cursor: pointer;
+  transition: width .25s, background .25s;
+}
+.pm-bolinha[aria-current="true"] { width: 22px; background: var(--pm-acento); }
+.pm-progresso {
+  position: absolute;
+  left: 0; right: 0; bottom: -6px;
+  height: 2px;
+  overflow: hidden;
+  pointer-events: none;
+}
+.pm-progresso i {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: var(--pm-acento2);
+}
+
+@media (max-width: 520px) {
+  .pm { gap: 8px; }
+  .pm-btn { padding: 0 9px; }
+  .pm-chip { padding: 3px 8px; font-size: 11px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pm-bolinha, .pm-dica, .pm-chip { transition: none; }
+}
